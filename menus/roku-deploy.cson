@@ -1,0 +1,26 @@
+# See https://atom.io/docs/latest/hacking-atom-package-word-count#menus for more details
+'context-menu':
+  'atom-text-editor': [
+    {
+      'label': 'Deploy roku-deploy'
+      'command': 'roku-deploy:deployRoku'
+    }
+  ]
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'roku-deploy'
+      'submenu': [
+        {
+          'label': 'Deploy'
+          'command': 'roku-deploy:deployRoku'
+        },
+        {
+          'label' : 'Set Roku address'
+          'command' : 'roku-deploy:setRokuAddress'
+        }
+      ]
+    ]
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "name": "roku-deploy",
+  "main": "./lib/roku-deploy",
+  "version": "0.1.0",
+  "description": "A simple package to deploy to roku from Atom.",
+  "keywords": [],
+  "activationCommands": {
+    "atom-workspace": "roku-deploy:deployRoku"    
+  },
+  "repository": "https://github.com/mmratio/roku-deploy",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "archiver": "^0.21.0",
+    "request": "^2.69.0"
+  }
+}
