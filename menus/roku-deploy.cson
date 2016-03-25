@@ -15,10 +15,6 @@
         {
           'label': 'Deploy'
           'command': 'roku-deploy:deployRoku'
-        },
-        {
-          'label' : 'Set Roku address'
-          'command' : 'roku-deploy:setRokuAddress'
         }
       ]
     ]
