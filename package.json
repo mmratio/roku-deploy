@@ -1,7 +1,7 @@
 {
   "name": "roku-deploy",
   "main": "./lib/roku-deploy",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A simple package to deploy to roku from Atom.",
   "keywords": [],
   "activationCommands": {
