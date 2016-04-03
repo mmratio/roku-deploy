@@ -117,4 +117,9 @@ module.exports = RokuDeploy =
     #   Diplay input for setting roku address
 
   deployRoku: ->
+      @rokuAddress = atom.config.get('roku-deploy.rokuAddress')
+      @rokuUserId = atom.config.get('roku-deploy.rokuUserId')
+      @rokuPassword = atom.config.get('roku-deploy.rokuPassword')
+      @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
+      @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
       @zipPackage()
