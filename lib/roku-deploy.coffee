@@ -59,6 +59,7 @@ module.exports = RokuDeploy =
 
   zipPackage: ->
       console.log 'zipPackage called.'
+      request.post('http://' + module.exports.rokuAddress + ':8060/keypress/Home').on('error', (err)-> console.log err)
       dirs = atom.project.getDirectories()
       dir = dirs[0]
       if(dir!=undefined)
@@ -101,7 +102,6 @@ module.exports = RokuDeploy =
           formData :
               mysubmit : 'Replace'
               archive : fs.createReadStream(bundlePath+'bundle.zip')
-      request.post('http://' + module.exports.rokuAddress + ':8060/keypress/Home').on('error', (err)-> console.log err)
       request.post(rokuOptions,module.exports.requestCallback).auth(module.exports.rokuUserId,module.exports.rokuPassword,false).on('error', (err)-> console.log err)
       console.log 'Request started'
 
