@@ -13,7 +13,7 @@ module.exports = RokuDeploy =
   rokuUserId: null
   excludedPaths: null
   outputDirectory: null
-  separator: if process.platform = 'win32' then '/' else '\\'
+  separator: if process.platform != 'win32' then '/' else '\\'
   config:
       rokuAddress:
           type: 'string'
