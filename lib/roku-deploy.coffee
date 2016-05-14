@@ -13,6 +13,7 @@ module.exports = RokuDeploy =
   rokuUserId: null
   excludedPaths: null
   outputDirectory: null
+  separator: if process.platform != 'win32' then '/' else '\\'
   config:
       rokuAddress:
           type: 'string'
@@ -78,7 +79,7 @@ module.exports = RokuDeploy =
       dir = dirs[0]
       if(dir!=undefined)
           p = dir.getRealPathSync()
-          bundlePath = p+'\\' + @outputDirectory + '\\'
+          bundlePath = p + @separator + @outputDirectory + @separator
           try
               stat = fs.lstatSync(bundlePath)
           catch error
@@ -110,7 +111,7 @@ module.exports = RokuDeploy =
       dirs = atom.project.getDirectories()
       dir = dirs[0]
       p = dir.getRealPathSync()
-      bundlePath = p+'\\' + module.exports.outputDirectory + '\\'
+      bundlePath = p + module.exports.separator  + module.exports.outputDirectory + module.exports.separator
       rokuOptions =
           url : addrs
           formData :
