@@ -15,6 +15,7 @@
   "dependencies": {
     "archiver": "^0.21.0",
     "request": "^2.69.0",
-    "node-ssdp": "^2.8.0"
+    "node-ssdp": "^2.8.0",
+    "cheerio": "^0.22.0"
   }
 }
