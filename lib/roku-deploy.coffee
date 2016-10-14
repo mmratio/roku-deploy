@@ -1,4 +1,5 @@
 RokuDeployView = require './roku-deploy-view'
+RokuDetector = require './roku-detect'
 {CompositeDisposable} = require 'atom'
 fs = require 'fs'
 Archiver = require 'archiver'
@@ -15,21 +16,27 @@ module.exports = RokuDeploy =
   outputDirectory: null
   separator: if process.platform != 'win32' then '/' else '\\'
   config:
-      rokuAddress:
-          type: 'string'
-          default: '192.168.1.1'
-      rokuUserId:
-          type: 'string'
-          default: 'rokudev'
-      rokuPassword:
-          type: 'string'
-          default: '1111'
-      excludedPaths:
-          type: 'string'
-          default: 'out'
-      outputDirectory:
-          type: 'string'
-          default: 'out'
+    availableRokus:
+      title: 'Available Devices'
+      type: 'string'
+      default: 'None'
+      description: 'Roku devices detected in your local network'
+      enum: ['None']
+    rokuAddress:
+      type: 'string'
+      default: '192.168.1.1'
+    rokuUserId:
+      type: 'string'
+      default: 'rokudev'
+    rokuPassword:
+      type: 'string'
+      default: '1111'
+    excludedPaths:
+      type: 'string'
+      default: 'out'
+    outputDirectory:
+      type: 'string'
+      default: 'out'
 
   activate: (state) ->
     @rokuDeployView = new RokuDeployView(state.rokuDeployViewState)
