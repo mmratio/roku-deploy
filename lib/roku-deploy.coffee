@@ -1,12 +1,13 @@
 RokuDeployView = require './roku-deploy-view'
+RokuSearchView = require './roku-search-view'
 RokuDetector = require './roku-detect'
 {CompositeDisposable} = require 'atom'
 fs = require 'fs'
 Archiver = require 'archiver'
 request = require 'request'
 
-
-module.exports =
+module.exports = RokuDeploy =
+  devices : []
   rokuDeployView: null
   modalPanel: null
   subscriptions: null
@@ -16,15 +17,7 @@ module.exports =
   excludedPaths: null
   outputDirectory: null
   separator: if process.platform != 'win32' then '/' else '\\'
-  #config to be defined on activation
-  devices : []
-  # inital config
-  config :
-    devices:
-      title: 'Available Devices'
-      type: 'array'
-      default: ['192.168.1.1']
-      description: 'Roku devices detected in your local network'
+  config:
     rokuAddress:
       type: 'string'
       default: '192.168.1.1'
@@ -42,15 +35,6 @@ module.exports =
       default: 'out'
 
   activate: (state) ->
-    RokuDetector.detectDevices((ip) =>
-      @devices.push ip
-      devices = @devices.map (device) -> device.model
-      console.log @devices
-      atom.config.set 'roku-deploy.devices', devices
-    )
-    @setup state
-
-  setup:(state) ->
     @rokuDeployView = new RokuDeployView(state.rokuDeployViewState)
     @modalPanel = atom.workspace.addModalPanel(item: @rokuDeployView.getElement(), visible: false)
     @rokuAddress = atom.config.get('roku-deploy.rokuAddress')
@@ -63,11 +47,13 @@ module.exports =
     console.log 'roku-deploy activated'
     # Register command that shows this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'roku-deploy:deployRoku': => @deployRoku()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'roku-deploy:searchDevices': => @searchDevices()
 
   deactivate: ->
-    @modalPanel.destroy()
-    @subscriptions.dispose()
-    @rokuDeployView.destroy()
+    do @modalPanel.destroy
+    do @subscriptions.dispose
+    do @rokuDeployView.destroy
+    do @rokuSearchView.destroy
 
   serialize: ->
     rokuDeployViewState: @rokuDeployView.serialize()
@@ -75,7 +61,6 @@ module.exports =
   addToZip: (dir) ->
     console.log dir.getRealPathSync()
     @zip.directory dir.getRealPathSync(), dir.getBaseName()
-
 
   zipPackage: ->
     console.log 'zipPackage called.'
@@ -166,3 +151,14 @@ module.exports =
     @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
     @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
     @zipPackage()
+
+  searchDevices:->
+    @devices = []
+    @rokuSearchView = new RokuSearchView('roku-deploy.rokuAddress', ()=> do @modalPanel.destroy)
+    RokuDetector.detectDevices((device) =>
+      @devices.push device
+      console.log @devices
+      devices = @devices.map (dev) -> dev.name
+      @rokuSearchView.addDevice device
+    )
+    @modalPanel = atom.workspace.addModalPanel { item: @rokuSearchView.getElement(), visible: true }

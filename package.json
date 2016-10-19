@@ -5,8 +5,7 @@
     "description": "A simple package to deploy to roku from Atom.",
     "keywords": [],
     "activationCommands": {
-        "atom-workspace": "roku-deploy:deployRoku",
-        "atom-workspace": "roku-deploy:deployRoku"
+        "atom-workspace": ["roku-deploy:deployRoku", "roku-deploy:searchDevices"]
     },
     "repository": "https://github.com/mmratio/roku-deploy",
     "license": "MIT",
