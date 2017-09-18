@@ -13,6 +13,7 @@ module.exports = RokuDeploy =
   rokuUserId: null
   excludedPaths: null
   outputDirectory: null
+  srcDirectory: null
   separator: if process.platform != 'win32' then '/' else '\\'
   config:
       rokuAddress:
@@ -30,6 +31,9 @@ module.exports = RokuDeploy =
       outputDirectory:
           type: 'string'
           default: 'out'
+      srcDirectory:
+          type: 'string'
+          default: '.'
 
   activate: (state) ->
     @rokuDeployView = new RokuDeployView(state.rokuDeployViewState)
@@ -39,6 +43,7 @@ module.exports = RokuDeploy =
     @rokuPassword = atom.config.get('roku-deploy.rokuPassword')
     @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
     @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
+    @srcDirectory = atom.config.get('roku-deply.srcDirectory')
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
     console.log 'roku-deploy activated'
@@ -76,7 +81,7 @@ module.exports = RokuDeploy =
 
   zipCore: ->
       dirs = atom.project.getDirectories()
-      dir = dirs[0]
+      dir = dirs[0].getSubdirectory(module.exports.srcDirectory)
       if(dir!=undefined)
           p = dir.getRealPathSync()
           bundlePath = p + @separator + @outputDirectory + @separator
@@ -109,7 +114,7 @@ module.exports = RokuDeploy =
       addrs = 'http://'+ module.exports.rokuAddress + '/plugin_install'
       console.log  addrs
       dirs = atom.project.getDirectories()
-      dir = dirs[0]
+      dir = dirs[0].getSubdirectory(module.exports.srcDirectory)
       p = dir.getRealPathSync()
       bundlePath = p + module.exports.separator  + module.exports.outputDirectory + module.exports.separator
       rokuOptions =
@@ -146,4 +151,5 @@ module.exports = RokuDeploy =
       @rokuPassword = atom.config.get('roku-deploy.rokuPassword')
       @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
       @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
+      @srcDirectory = atom.config.get('roku-deploy.srcDirectory')
       @zipPackage()
