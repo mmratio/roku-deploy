@@ -16,23 +16,27 @@ module.exports = RokuDeploy =
   rokuUserId: null
   excludedPaths: null
   outputDirectory: null
+  srcDirectory: null
   separator: if process.platform != 'win32' then '/' else '\\'
   config:
-    rokuAddress:
-      type: 'string'
-      default: '192.168.1.1'
-    rokuUserId:
-      type: 'string'
-      default: 'rokudev'
-    rokuPassword:
-      type: 'string'
-      default: '1111'
-    excludedPaths:
-      type: 'string'
-      default: 'out'
-    outputDirectory:
-      type: 'string'
-      default: 'out'
+      rokuAddress:
+          type: 'string'
+          default: '192.168.1.1'
+      rokuUserId:
+          type: 'string'
+          default: 'rokudev'
+      rokuPassword:
+          type: 'string'
+          default: '1111'
+      excludedPaths:
+          type: 'string'
+          default: 'out'
+      outputDirectory:
+          type: 'string'
+          default: 'out'
+      srcDirectory:
+          type: 'string'
+          default: '.'
 
   activate: (state) ->
     @rokuDeployView = new RokuDeployView(state.rokuDeployViewState)
@@ -42,6 +46,7 @@ module.exports = RokuDeploy =
     @rokuPassword = atom.config.get('roku-deploy.rokuPassword')
     @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
     @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
+    @srcDirectory = atom.config.get('roku-deply.srcDirectory')
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
     console.log 'roku-deploy activated'
@@ -79,20 +84,20 @@ module.exports = RokuDeploy =
     )
 
   zipCore: ->
-    dirs = atom.project.getDirectories()
-    dir = dirs[0]
-    if(dir!=undefined)
-      p = dir.getRealPathSync()
-      bundlePath = p + @separator + @outputDirectory + @separator
-      try
-        stat = fs.lstatSync(bundlePath)
-      catch error
-        console.log 'out directory not found, creating.'
-        fs.mkdirSync(bundlePath)
-        stat = fs.lstatSync(bundlePath)
-        if(not stat.isDirectory())
-          console.log 'failed to create out directory.'
-          return
+      dirs = atom.project.getDirectories()
+      dir = dirs[0].getSubdirectory(module.exports.srcDirectory)
+      if(dir!=undefined)
+          p = dir.getRealPathSync()
+          bundlePath = p + @separator + @outputDirectory + @separator
+          try
+              stat = fs.lstatSync(bundlePath)
+          catch error
+              console.log 'out directory not found, creating.'
+              fs.mkdirSync(bundlePath)
+              stat = fs.lstatSync(bundlePath)
+              if(not stat.isDirectory())
+                  console.log 'failed to create out directory.'
+                  return
 
       zipFile = fs.createWriteStream(bundlePath+'bundle.zip')
       @zip = Archiver('zip')
@@ -108,21 +113,21 @@ module.exports = RokuDeploy =
     @zip.finalize()
 
   zipComplete: ->
-    console.log "Zipping complete"
-    atom.notifications.addInfo("Bundling completed. Starting deploy . . .")
-    addrs = 'http://'+ module.exports.rokuAddress + '/plugin_install'
-    console.log addrs
-    dirs = atom.project.getDirectories()
-    dir = dirs[0]
-    p = dir.getRealPathSync()
-    bundlePath = p + module.exports.separator + module.exports.outputDirectory + module.exports.separator
-    rokuOptions =
-      url : addrs
-      formData :
-        mysubmit : 'Replace'
-        archive : fs.createReadStream(bundlePath+'bundle.zip')
-    request.post(rokuOptions,module.exports.requestCallback).auth(module.exports.rokuUserId,module.exports.rokuPassword,false)
-    console.log 'Request started'
+      console.log "Zipping complete"
+      atom.notifications.addInfo("Bundling completed. Starting deploy . . .")
+      addrs = 'http://'+ module.exports.rokuAddress + '/plugin_install'
+      console.log  addrs
+      dirs = atom.project.getDirectories()
+      dir = dirs[0].getSubdirectory(module.exports.srcDirectory)
+      p = dir.getRealPathSync()
+      bundlePath = p + module.exports.separator  + module.exports.outputDirectory + module.exports.separator
+      rokuOptions =
+          url : addrs
+          formData :
+              mysubmit : 'Replace'
+              archive : fs.createReadStream(bundlePath+'bundle.zip')
+      request.post(rokuOptions,module.exports.requestCallback).auth(module.exports.rokuUserId,module.exports.rokuPassword,false)
+      console.log 'Request started'
 
 
   requestCallback: (error,response,body) ->
@@ -150,6 +155,7 @@ module.exports = RokuDeploy =
     @rokuPassword = atom.config.get('roku-deploy.rokuPassword')
     @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
     @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
+    @srcDirectory = atom.config.get('roku-deploy.srcDirectory')
     @zipPackage()
 
   searchDevices:->
