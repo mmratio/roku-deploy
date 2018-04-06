@@ -2,7 +2,7 @@
 'context-menu':
   'atom-text-editor': [
     {
-      'label': 'Deploy roku-deploy'
+      'label': 'Deploy to Roku'
       'command': 'roku-deploy:deployRoku'
     }
   ]
@@ -10,10 +10,14 @@
   {
     'label': 'Packages'
     'submenu': [
-      'label': 'roku-deploy'
+      'label': 'Roku Deploy'
       'submenu': [
         {
-          'label': 'Deploy'
+          'label': 'Seach Available Devices'
+          'command': 'roku-deploy:searchDevices'
+        }
+        {
+          'label': 'Deploy to Roku'
           'command': 'roku-deploy:deployRoku'
         }
       ]

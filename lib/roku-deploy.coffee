@@ -1,10 +1,13 @@
 RokuDeployView = require './roku-deploy-view'
+RokuSearchView = require './roku-search-view'
+RokuDetector = require './roku-detect'
 {CompositeDisposable} = require 'atom'
 fs = require 'fs'
 Archiver = require 'archiver'
 request = require 'request'
 
 module.exports = RokuDeploy =
+  devices : []
   rokuDeployView: null
   modalPanel: null
   subscriptions: null
@@ -49,11 +52,13 @@ module.exports = RokuDeploy =
     console.log 'roku-deploy activated'
     # Register command that shows this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'roku-deploy:deployRoku': => @deployRoku()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'roku-deploy:searchDevices': => @searchDevices()
 
   deactivate: ->
-    @modalPanel.destroy()
-    @subscriptions.dispose()
-    @rokuDeployView.destroy()
+    do @modalPanel.destroy
+    do @subscriptions.dispose
+    do @rokuDeployView.destroy
+    do @rokuSearchView.destroy
 
   serialize: ->
     rokuDeployViewState: @rokuDeployView.serialize()
@@ -62,22 +67,21 @@ module.exports = RokuDeploy =
     console.log dir.getRealPathSync()
     @zip.directory dir.getRealPathSync(), dir.getBaseName()
 
-
   zipPackage: ->
-      console.log 'zipPackage called.'
-      request.post('http://' + module.exports.rokuAddress + ':8060/keypress/Home').on('response', (response)->
+    console.log 'zipPackage called.'
+    request.post('http://' + module.exports.rokuAddress + ':8060/keypress/Home').on('response', (response)->
+      if response != undefined
+        console.log "Response returned"
+        if response != undefined && response.statusCode != undefined && response.statusCode == 200
+          console.log "Response returned 200"
+          module.exports.zipCore()
+        else
+          atom.notifications.addError('Sending Home command did not succeed. See console for details.')
           if response != undefined
-              console.log "Response returned"
-              if response != undefined && response.statusCode != undefined && response.statusCode == 200
-                  console.log "Response returned 200"
-                  module.exports.zipCore()
-              else
-                  atom.notifications.addError('Sending Home command did not succeed. See console for details.')
-                  if response != undefined
-                      console.log response.body
-          else
-              console.log "No response returned."
-      )
+            console.log response.body
+      else
+        console.log "No response returned."
+    )
 
   zipCore: ->
       dirs = atom.project.getDirectories()
@@ -95,18 +99,18 @@ module.exports = RokuDeploy =
                   console.log 'failed to create out directory.'
                   return
 
-          zipFile = fs.createWriteStream(bundlePath+'bundle.zip')
-          @zip = Archiver('zip')
-          zipFile.on('close',@zipComplete)
-          @zip.on('error',(err) -> throw err)
-          @zip.pipe(zipFile)
-          splitExcludedPaths = @excludedPaths.split(',')
-          upperExcludedPaths = []
-          splitExcludedPaths.forEach (ep) -> upperExcludedPaths.push(ep.trim().toLocaleUpperCase())
-          @addToZip directory for directory in dir.getEntriesSync() when directory.isDirectory() and upperExcludedPaths.indexOf(directory.getBaseName().toLocaleUpperCase()) == -1 and not directory.getBaseName().startsWith('.')
-          params = {expand: true, cwd: dir.getRealPathSync(), src: ['manifest'],dest:''}
-          @zip.bulk params
-      @zip.finalize()
+      zipFile = fs.createWriteStream(bundlePath+'bundle.zip')
+      @zip = Archiver('zip')
+      zipFile.on('close',@zipComplete)
+      @zip.on('error',(err) -> throw err)
+      @zip.pipe(zipFile)
+      splitExcludedPaths = @excludedPaths.split(',')
+      upperExcludedPaths = []
+      splitExcludedPaths.forEach (ep) -> upperExcludedPaths.push(ep.trim().toLocaleUpperCase())
+      @addToZip directory for directory in dir.getEntriesSync() when directory.isDirectory() and upperExcludedPaths.indexOf(directory.getBaseName().toLocaleUpperCase()) == -1 and not directory.getBaseName().startsWith('.')
+      params = {expand: true, cwd: dir.getRealPathSync(), src: ['manifest'],dest:''}
+      @zip.bulk params
+    @zip.finalize()
 
   zipComplete: ->
       console.log "Zipping complete"
@@ -127,29 +131,40 @@ module.exports = RokuDeploy =
 
 
   requestCallback: (error,response,body) ->
-      if response != undefined && response.statusCode != undefined && response.statusCode == 200
-          if response.body.indexOf("Identical to previous version -- not replacing.") != -1
-              atom.notifications.addWarning("Deploy cancelled by Roku: the package is identical to the package already on the Roku.")
-          else
-              console.log "Successfully deployed"
-              atom.notifications.addSuccess('Deployed to '+module.exports.rokuAddress)
+    if response != undefined && response.statusCode != undefined && response.statusCode == 200
+      if response.body.indexOf("Identical to previous version -- not replacing.") != -1
+        atom.notifications.addWarning("Deploy cancelled by Roku: the package is identical to the package already on the Roku.")
       else
-          atom.notifications.addFatalError("Failed to deploy to " + module.exports.rokuAddress + " see console output for details.")
-          console.log error
-          if response != undefined
-              console.log response.body
+        console.log "Successfully deployed"
+        atom.notifications.addSuccess('Deployed to '+module.exports.rokuAddress)
+    else
+      atom.notifications.addFatalError("Failed to deploy to " + module.exports.rokuAddress + " see console output for details.")
+      console.log error
+      if response != undefined
+        console.log response.body
 
   setRokuAddress: (address, userId,pwd)->
-      module.exports.rokuAddress = address
-      module.exports.rokuUserId = userId
-      moduel.exports.rokuPassword = pwd
+    module.exports.rokuAddress = address
+    module.exports.rokuUserId = userId
+    moduel.exports.rokuPassword = pwd
     #   Diplay input for setting roku address
 
   deployRoku: ->
-      @rokuAddress = atom.config.get('roku-deploy.rokuAddress')
-      @rokuUserId = atom.config.get('roku-deploy.rokuUserId')
-      @rokuPassword = atom.config.get('roku-deploy.rokuPassword')
-      @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
-      @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
-      @srcDirectory = atom.config.get('roku-deploy.srcDirectory')
-      @zipPackage()
+    @rokuAddress = atom.config.get('roku-deploy.rokuAddress')
+    @rokuUserId = atom.config.get('roku-deploy.rokuUserId')
+    @rokuPassword = atom.config.get('roku-deploy.rokuPassword')
+    @excludedPaths = atom.config.get('roku-deploy.excludedPaths')
+    @outputDirectory = atom.config.get('roku-deploy.outputDirectory')
+    @srcDirectory = atom.config.get('roku-deploy.srcDirectory')
+    @zipPackage()
+
+  searchDevices:->
+    @devices = []
+    @rokuSearchView = new RokuSearchView('roku-deploy.rokuAddress', ()=> do @modalPanel.destroy)
+    RokuDetector.detectDevices((device) =>
+      @devices.push device
+      console.log @devices
+      devices = @devices.map (dev) -> dev.name
+      @rokuSearchView.addDevice device
+    )
+    @modalPanel = atom.workspace.addModalPanel { item: @rokuSearchView.getElement(), visible: true }
